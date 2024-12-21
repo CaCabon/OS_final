@@ -8,6 +8,15 @@ import time
 
 # 初始化 Pygame
 pygame.init()
+pygame.mixer.init()
+
+main_menu_music = "music/bg.mp3"  # 主畫面音樂
+game_music = "music/game.mp3" 
+pygame.mixer.music.load("music/bg.mp3")
+pygame.mixer.music.play(-1)
+pygame.mixer.music.set_volume(0.5)
+
+game_start = False
 
 # 設定遊戲視窗大小
 width, height = 1710, 960
@@ -224,6 +233,8 @@ def typewriter_effect(lines, font, color, start_pos, speed=100):
 
 def mode_selection():
     """顯示模式選擇畫面"""
+    global game_start
+    game_start = False
     running = True
     while running:
         screen.fill(background_Color)
@@ -255,9 +266,14 @@ def mode_selection():
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if single_button_rect.collidepoint(mouse_pos):
+                if single_button_rect.collidepoint(mouse_pos) and not game_start:
+                    pygame.mixer.music.stop()
+                    pygame.mixer.music.load(game_music)
+                    pygame.mixer.music.play(-1)  # 無限循環播放
+                    pygame.mixer.music.set_volume(0.5)
+                    game_start = True
                     return "single"
-                elif multi_button_rect.collidepoint(mouse_pos):
+                elif multi_button_rect.collidepoint(mouse_pos) and not game_start:
                     return "multi"
                     
         pygame.display.flip()
@@ -470,6 +486,8 @@ def create_server(port):
 
 def show_server_info():
     """顯示伺服器資訊畫面"""
+    global game_start
+    game_start = False
     hostname = socket.gethostname()
     ip = socket.gethostbyname(hostname)
     server_port = 12345
@@ -505,7 +523,12 @@ def show_server_info():
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if confirm_button_rect.collidepoint(mouse_pos):
+                if confirm_button_rect.collidepoint(mouse_pos) and not game_start:
+                    pygame.mixer.music.stop()
+                    pygame.mixer.music.load(game_music)
+                    pygame.mixer.music.play(-1)  # 無限循環播放
+                    pygame.mixer.music.set_volume(0.5)
+                    game_started = True
                     return
                     
         pygame.display.flip()
@@ -646,8 +669,8 @@ def description_panel():
                 "               而你剛好看到，想打聲招呼於是也走了進去。",
                 "               進去發現，餐廳裡的客人都被施加了奇怪的「狀態」，",
                 "               老師們也不例外。",
-                "               此時，服務生來了。",
                 "               「你，是他們的學生嗎?」",
+                "               服務生走向你說道。",
                 "               「我們來玩個遊戲吧!」",
                 "               「他們會怎麼樣，全掌握在你手中。」",
                 "",
@@ -785,6 +808,7 @@ def main_game(connection=None):
         )
         receive_thread.daemon = True
         receive_thread.start()
+    # 遊戲時間
     game_time = 11 * 1000  # 60秒轉換為毫秒
     start_time = pygame.time.get_ticks()  # 記錄遊戲開始時間
     game_over = False
@@ -891,7 +915,7 @@ def main_game(connection=None):
         remaining_time = game_time - elapsed_time  # 剩餘時間（毫秒）
 
         if remaining_time <= 1:
-            remaining_time = 1  # 保證不會顯示負數時間
+            remaining_time = 0  # 保證不會顯示負數時間
             game_over = True
 
         # 計算顯示的秒數
