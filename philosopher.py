@@ -173,6 +173,8 @@ P3_image = pygame.image.load("images/P3.png")
 P3_image = pygame.transform.scale(P3_image, (120, 120))
 P4_image = pygame.image.load("images/P4.png")
 P4_image = pygame.transform.scale(P4_image, (120, 120))
+P5_image = pygame.image.load("images/P5.png")
+P5_image = pygame.transform.scale(P5_image, (120, 120))
 n1_image = pygame.image.load("images/1.png")
 n1_image = pygame.transform.scale(n1_image, (80, 80))
 n2_image = pygame.image.load("images/2.png")
@@ -999,6 +1001,8 @@ for i, position in enumerate(positions):
         philosopher['image'] = P3_image
     elif i == 3:
         philosopher['image'] = P4_image
+    elif i == 4:
+        philosopher['image'] = P5_image
     philosophers.append(philosopher)
 
 def assign_random_number_image():
@@ -1066,15 +1070,15 @@ def update_philosopher_state(philosopher, current_time):
 
             # 根據哲學家的編號調整用餐按鈕的位置
             if philosopher['id'] == 1:  # 1號哲學家 - 右邊下面
-                philosopher['button_rect'].topleft = (philosopher['pos'][0] + 55, philosopher['pos'][1])
+                philosopher['button_rect'].topleft = (philosopher['pos'][0] + 60, philosopher['pos'][1] + 20)
             elif philosopher['id'] == 2:  # 2號哲學家
-                philosopher['button_rect'].topleft = (philosopher['pos'][0] - 52, philosopher['pos'][1] + 60)
+                philosopher['button_rect'].topleft = (philosopher['pos'][0] - 52, philosopher['pos'][1] + 70)
             elif philosopher['id'] == 3:  # 3號哲學家
-                philosopher['button_rect'].topleft = (philosopher['pos'][0] + 47, philosopher['pos'][1] + 20)
+                philosopher['button_rect'].topleft = (philosopher['pos'][0] + 52, philosopher['pos'][1] + 30)
             elif philosopher['id'] == 4:  # 4號哲學家
-                philosopher['button_rect'].topleft = (philosopher['pos'][0] - 147, philosopher['pos'][1] + 20)
+                philosopher['button_rect'].topleft = (philosopher['pos'][0] - 152, philosopher['pos'][1] + 30)
             elif philosopher['id'] == 5:  # 5號哲學家 - 左邊下面
-                philosopher['button_rect'].topleft = (philosopher['pos'][0] - 52, philosopher['pos'][1] + 57)
+                philosopher['button_rect'].topleft = (philosopher['pos'][0] - 52, philosopher['pos'][1] + 67)
             else:  # 預設位置
                 philosopher['button_rect'].topleft = (philosopher['pos'][0] - 100, philosopher['pos'][1] + 50)
 
