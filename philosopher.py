@@ -146,14 +146,56 @@ def draw_game_instructions():
 eat_button_image = pygame.image.load("images/eat_button.png")
 eat_button_image = pygame.transform.scale(eat_button_image, (110, 100))
 hungry_image = pygame.image.load("images/hungry.png")
-hungry_image = pygame.transform.scale(hungry_image, (95, 95))
+hungry_image = pygame.transform.scale(hungry_image, (60, 60))
 eat_image = pygame.image.load("images/eat.png")
-eat_image = pygame.transform.scale(eat_image, (95, 95))
+eat_image = pygame.transform.scale(eat_image, (60, 60))
 ready_eat_image = pygame.image.load("images/ready_eat.png")
-ready_eat_image = pygame.transform.scale(ready_eat_image, (95, 95))
+ready_eat_image = pygame.transform.scale(ready_eat_image, (60, 60))
 think_image = pygame.image.load("images/think.png")
-think_image = pygame.transform.scale(think_image, (95, 95))
+think_image = pygame.transform.scale(think_image, (60, 60))
 think_rect = think_image.get_rect()
+angry_image = pygame.image.load("images/angry.png")
+angry_image = pygame.transform.scale(angry_image, (60, 60))
+P1_image = pygame.image.load("images/P1.png")
+P1_image = pygame.transform.scale(P1_image, (120, 120))
+P2_image = pygame.image.load("images/P2.png")
+P2_image = pygame.transform.scale(P2_image, (120, 120))
+P3_image = pygame.image.load("images/P3.png")
+P3_image = pygame.transform.scale(P3_image, (120, 120))
+P4_image = pygame.image.load("images/P4.png")
+P4_image = pygame.transform.scale(P4_image, (120, 120))
+n1_image = pygame.image.load("images/1.png")
+n1_image = pygame.transform.scale(n1_image, (80, 80))
+n2_image = pygame.image.load("images/2.png")
+n2_image = pygame.transform.scale(n2_image, (80, 80))
+n3_image = pygame.image.load("images/3.png")
+n3_image = pygame.transform.scale(n3_image, (80, 80))
+n4_image = pygame.image.load("images/4.png")
+n4_image = pygame.transform.scale(n4_image, (80, 80))
+n5_image = pygame.image.load("images/5.png")
+n5_image = pygame.transform.scale(n5_image, (80, 80))
+n6_image = pygame.image.load("images/6.png")
+n6_image = pygame.transform.scale(n6_image, (80, 80))
+n7_image = pygame.image.load("images/7.png")
+n7_image = pygame.transform.scale(n7_image, (80, 80))
+n8_image = pygame.image.load("images/8.png")
+n8_image = pygame.transform.scale(n8_image, (80, 80))
+n9_image = pygame.image.load("images/9.png")
+n9_image = pygame.transform.scale(n9_image, (80, 80))
+n10_image = pygame.image.load("images/10.png")
+n10_image = pygame.transform.scale(n10_image, (80, 80))
+number_images = [
+    (n1_image, 1),
+    (n2_image, 2),
+    (n3_image, 3),
+    (n4_image, 4),
+    (n5_image, 5),
+    (n6_image, 6),
+    (n7_image, 7),
+    (n8_image, 8),
+    (n9_image, 9),
+    (n10_image, 10),
+]
 
 def typewriter_effect(lines, font, color, start_pos, speed=100):
     # """逐字顯示文字"""
@@ -494,7 +536,7 @@ def draw_scores():
     if not is_multiplayer:
         return
         
-    score_font = pygame.font.Font("fonts/NotoSerifCJKtc-Regular.otf", 36)
+    score_font = pygame.font.Font("fonts/NotoSerifCJKtc-Regular.otf", 40)
     
     # 繪製自己的分數（左上角）
     my_score_text = score_font.render(f"我的分數: {my_score}", True, BLACK)
@@ -743,7 +785,12 @@ def main_game(connection=None):
         )
         receive_thread.daemon = True
         receive_thread.start()
-    
+    game_time = 11 * 1000  # 60秒轉換為毫秒
+    start_time = pygame.time.get_ticks()  # 記錄遊戲開始時間
+    game_over = False
+
+    # 設定字體
+    font = pygame.font.SysFont("fonts/NotoSerifCJKtc-Black.otf", 70)
     running = True
     while running:
         current_time = pygame.time.get_ticks()
@@ -758,10 +805,19 @@ def main_game(connection=None):
                     if philosopher['state'] == 'hungry':
                         if philosopher['button_rect'].collidepoint(mouse_pos):
                             if check_eat_condition(philosopher):  # 確認是否可以吃飯
-                                game_state.my_score += 10
+                                start_eating(philosopher, current_time)
+                                game_state.my_score += philosopher['eat_time'] * 2  # 根據數字圖片給分
                                 game_state.update_score()
                                 philosopher['state'] = 'eating'
-                                philosopher['image'] = eat_image
+                                philosopher['state_image'] = eat_image
+                                # philosopher['image'] = eat_image
+                                philosopher['last_state_change'] = current_time
+                            else:
+                                game_state.my_score -= philosopher['eat_time']   # 根據數字圖片給分
+                                game_state.update_score()
+                                philosopher['state'] = 'angry'
+                                philosopher['state_image'] = angry_image
+                                philosopher['angry_start_time'] = current_time
                                 philosopher['last_state_change'] = current_time
         
         # 更新所有哲學家的狀態
@@ -779,7 +835,10 @@ def main_game(connection=None):
         for position in positions2:
             plate_rect.center = position 
             screen.blit(plate_image, plate_rect)
-        
+        for i, position in enumerate(positions2):
+            philosopher = philosophers[i]
+            number_rect = philosopher['number_image'].get_rect(center=position)
+            screen.blit(philosopher['number_image'], number_rect)
         # 繪製筷子
         positions3 = position_chopsticks()
         for i, position in enumerate(positions3):
@@ -795,9 +854,25 @@ def main_game(connection=None):
             philosopher_rect = philosopher['image'].get_rect(center=position)
             screen.blit(philosopher['image'], philosopher_rect)
             
+            if i == 0:
+                stateP1_rect = philosopher['state_image'].get_rect(center=(position[0] -100, position[1] - 50))
+                screen.blit(philosopher['state_image'], stateP1_rect)
+            elif i == 1:
+                stateP2_rect = philosopher['state_image'].get_rect(center=(position[0], position[1] - 100))
+                screen.blit(philosopher['state_image'], stateP2_rect)
+            elif i == 2:
+                stateP3_rect = philosopher['state_image'].get_rect(center=(position[0], position[1] - 100))
+                screen.blit(philosopher['state_image'], stateP3_rect)
+            elif i == 3:
+                stateP4_rect = philosopher['state_image'].get_rect(center=(position[0], position[1] - 100))
+                screen.blit(philosopher['state_image'], stateP4_rect)
+            elif i == 4:
+                stateP5_rect = philosopher['state_image'].get_rect(center=(position[0], position[1] - 100))
+                screen.blit(philosopher['state_image'], stateP5_rect)
+
             if philosopher['state'] == 'hungry':         
                 screen.blit(eat_button_image, philosopher['button_rect'].topleft)
-        
+                philosopher['state_image'] = hungry_image
                # 繪製畫面最後加入分數顯示
         score_font = pygame.font.Font("fonts/NotoSerifCJKtc-Black.otf", 36)
         
@@ -812,7 +887,27 @@ def main_game(connection=None):
             opp_score_rect.topright = (width - 50, 30)  # 設定右上角位置
             screen.blit(opp_score_text, opp_score_rect)
         
+        elapsed_time = pygame.time.get_ticks() - start_time  # 已經經過的時間（毫秒）
+        remaining_time = game_time - elapsed_time  # 剩餘時間（毫秒）
+
+        if remaining_time <= 1:
+            remaining_time = 1  # 保證不會顯示負數時間
+            game_over = True
+
+        # 計算顯示的秒數
+        seconds_left = remaining_time // 1000  # 轉換為秒
+
+        # 顯示剩餘時間
+        time_text = font.render(f"Time: {seconds_left}", True, BLACK)  # 白色文字
+        screen.blit(time_text, (width // 2 -100 , height // 10 -50))  # 顯示在畫面上方中央
+
+        if game_over:
+            # 顯示 "Times Up" 並停止操作
+            time_text = font.render("Times Up!", True, (255, 0, 0))  # 顯示紅色 "Times Up!"
+            screen.blit(time_text, (width // 2 -100 , height // 10 -50))  # 顯示在畫面上方中央
+
         pygame.display.flip()
+        pygame.time.Clock().tick(60)
         clock.tick(FPS)
     
     pygame.quit()
@@ -833,12 +928,16 @@ def check_eat_condition(philosopher):
     right_eating = philosophers[right_neighbor]['state'] == 'eating'
     
     # 如果左右鄰居都沒在吃飯，則可以吃
-    return not (left_eating or right_eating)
+    if left_eating or right_eating:
+        return False
+    else:
+        philosopher['eat_start_time'] = pygame.time.get_ticks()
+        return True
 
 # 計算哲學家位置的函數
 def position_philosophers():
     """計算每個哲學家在圓桌旁的位置"""
-    offset = 60  # 距離圓桌的偏移距離
+    offset = 80  # 距離圓桌的偏移距離
     position = []
     angle_step = 2 * math.pi / num_philosophers  # 每個哲學家之間的角度
     start_angle = math.pi / 2  # 起始角度
@@ -850,6 +949,7 @@ def position_philosophers():
     return position
 
 # 初始化哲學家
+
 positions = position_philosophers()
 philosophers = []
 for i, position in enumerate(positions):
@@ -857,18 +957,31 @@ for i, position in enumerate(positions):
         'id': i + 1,  # 哲學家編號
         'state': 'thinking',  # 初始狀態為思考
         'image': think_image,
+        'state_image': think_image,
         'pos': position,
         'next_hungry_time': pygame.time.get_ticks() + random.randint(1000, 3000),
         'button_rect': pygame.Rect(position[0] + 30, position[1] + 50, 95, 95),
         'last_state_change': pygame.time.get_ticks(),
-        'has_left_chopstick': False,
-        'has_right_chopstick': False,
-        'left_chopstick': i,
-        'right_chopstick': (i + 1) % num_philosophers,
-        'left_chopstick_rect': pygame.Rect(position[0], position[1] - 20, 70, 70),
-        'right_chopstick_rect': pygame.Rect(position[0] + 70, position[1] - 20, 70, 70)
+        'angry_start_time': None,
+        'eat_time': None,
+        'eat_start_time': None,
+        'number_image': None
     }
+    if i == 0:
+        philosopher['image'] = P1_image
+    elif i == 1:
+        philosopher['image'] = P2_image
+    elif i == 2:
+        philosopher['image'] = P3_image
+    elif i == 3:
+        philosopher['image'] = P4_image
     philosophers.append(philosopher)
+
+def assign_random_number_image():
+    number_image, number_value = random.choice(number_images)
+    return number_image, number_value   
+for philosopher in philosophers:
+    philosopher['number_image'], philosopher['eat_time'] = assign_random_number_image()
 
 # 載入和設定盤子圖片
 plate_image = pygame.image.load("images/plate.png")
@@ -882,7 +995,7 @@ def position_plate():
     angle_step = 2 * math.pi / num_philosophers 
     start_angle = math.pi / 2  
     for i in range(num_philosophers):
-        angle = start_angle + i * angle_step
+        angle = start_angle - i * angle_step
         x = table_Center[0] + (table_Radius -90) * math.cos(angle)
         y = table_Center[1] + (table_Radius -90) * math.sin(angle)
         position.append((x, y))
@@ -892,6 +1005,7 @@ def position_plate():
 chopsticks_image = pygame.image.load("images/chopsticks.png")
 chopsticks_image = pygame.transform.scale(chopsticks_image, (80, 80))
 chopsticks_rect = chopsticks_image.get_rect()
+
 
 # 計算筷子位置的函數
 def position_chopsticks():
@@ -922,7 +1036,7 @@ def update_philosopher_state(philosopher, current_time):
         if philosopher['state'] == 'thinking':
             # 從思考狀態變為飢餓狀態
             philosopher['state'] = 'hungry'
-            philosopher['image'] = hungry_image 
+            # philosopher['image'] = hungry_image 
             # 設定下一次飢餓時間（5-30秒後）
             philosopher['next_hungry_time'] = current_time + random.randint(3000, 7000)
 
@@ -940,17 +1054,41 @@ def update_philosopher_state(philosopher, current_time):
             else:  # 預設位置
                 philosopher['button_rect'].topleft = (philosopher['pos'][0] - 100, philosopher['pos'][1] + 50)
 
+    if philosopher['state'] == 'angry':
+        # 如果生氣時間已經記錄，計算生氣的持續時間
+        if philosopher['angry_start_time'] is not None:
+            elapsed_time = (current_time - philosopher['angry_start_time']) / 1000
+            if elapsed_time >= 3:
+                # 超過 3 秒，回到飢餓狀態
+                philosopher['state'] = 'hungry'
+                philosopher['state_image'] = hungry_image
+                philosopher['angry_start_time'] = None  # 清除生氣時間
     # 處理用餐狀態
     if philosopher['state'] == 'eating':
         # 用餐持續5秒
-        if current_time - philosopher['last_state_change'] >= 5000:
+        eating_duration = current_time - philosopher['eat_start_time']  # 吃的時間
+        remaining_time = philosopher['eat_time'] * 1000 - eating_duration  # 剩餘時間（毫秒）
+        if remaining_time <= 0:
             # 用餐結束，回到思考狀態
             philosopher['state'] = 'thinking'
-            philosopher['image'] = think_image
+            philosopher['state_image'] = think_image
+            philosopher['eat_time'] = None
+            philosopher['eat_start_time'] = None
+            # philosopher['image'] = think_image
             # 設定下一次飢餓時間
-            philosopher['next_hungry_time'] = current_time + random.randint(5000, 30000)
+            philosopher['next_hungry_time'] = current_time + random.randint(3000, 10000)
             philosopher['last_state_change'] = current_time
+            philosopher['number_image'], philosopher['eat_time'] = assign_random_number_image()
 
+def start_eating(philosopher, current_time):
+    if philosopher['state'] != 'eating':  # 如果哲學家不是在吃東西
+        # 分配數字圖片和時間
+        # philosopher['number_image'], philosopher['eat_time'] = assign_random_number_image()
+        # 開始吃東西
+        philosopher['state'] = 'eating'
+        philosopher['state_image'] = eat_image  # 假設你有一個eating_image
+        philosopher['eat_start_time'] = current_time  # 記錄開始時間
+        philosopher['eating_duration'] = 0  # 重置吃的持續時間
 # 遊戲主要流程
 def main():
     main_menu()
